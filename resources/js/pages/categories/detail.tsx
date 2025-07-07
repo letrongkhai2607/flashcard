@@ -46,7 +46,7 @@ export default function DeckView({ cards, category }: { cards: Card[]; category:
         <AppContainer>
             <div className="min-h-screen py-8">
                 {/* Header Section */}
-                <div className="mb-8 flex items-center gap-6">
+                <div className="mb-8 flex flex-col items-start gap-6 md:flex-row md:items-center">
                     <img
                         src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=facearea&w=128&h=128&q=80"
                         alt="Collection"
@@ -64,7 +64,7 @@ export default function DeckView({ cards, category }: { cards: Card[]; category:
                             <span>{cards.length} cards</span>
                         </div>
                     </div>
-                    <div className="ml-6 flex flex-col gap-3">
+                    <div className="flex flex-col gap-3 md:ml-6">
                         <button
                             onClick={handlePlaySlideshow}
                             className="flex items-center gap-2 rounded-full bg-yellow-400 px-6 py-2 font-semibold text-white shadow transition hover:bg-yellow-500 disabled:cursor-not-allowed disabled:opacity-50"
@@ -82,7 +82,7 @@ export default function DeckView({ cards, category }: { cards: Card[]; category:
                 <div className="mt-8 grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4">
                     {/* Add Card */}
                     <Link href={`${route('cards.create')}?category_id=${category.id}`} className="block">
-                        <div className="flex h-48 cursor-pointer items-center justify-center rounded-2xl border-2 border-dashed border-purple-300 bg-purple-800 text-5xl text-purple-300 transition hover:bg-purple-700">
+                        <div className="flex h-32 cursor-pointer items-center justify-center rounded-2xl border-2 border-dashed border-purple-300 bg-purple-800 text-5xl text-purple-300 transition hover:bg-purple-700 md:h-48">
                             +
                         </div>
                     </Link>
@@ -96,43 +96,7 @@ export default function DeckView({ cards, category }: { cards: Card[]; category:
                         } else if (language === 'vietnamese') {
                             backendSide = `${card.english} - ${card.chinese}`;
                         }
-                        return (
-                            <div key={card.id} className="group relative h-48 [perspective:1000px]">
-                                <div className="relative h-full w-full transition-transform duration-700 [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)]">
-                                    {/* Front Side */}
-                                    <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-gradient-to-b from-purple-300/40 to-purple-100/10 text-center text-2xl font-bold text-white shadow-md [backface-visibility:hidden]">
-                                        {language === 'english' ? card.english : language === 'chinese' ? card.chinese : card.vietnamese}
-                                    </div>
-
-                                    {/* Back Side */}
-                                    <div className="absolute inset-0 flex [transform:rotateY(180deg)] items-center justify-center rounded-xl bg-purple-500 px-4 text-center text-xl font-bold text-white shadow-md [backface-visibility:hidden]">
-                                        {backendSide}
-                                    </div>
-                                </div>
-
-                                {/* Card Actions - Only visible on hover */}
-                                <div className="absolute top-2 right-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                                    <div className="flex gap-1">
-                                        <Link href={route('cards.edit', card.id)}>
-                                            <Button variant="secondary" size="sm" className="h-8 w-8 p-0">
-                                                <Edit className="h-3 w-3" />
-                                            </Button>
-                                        </Link>
-                                        <Button
-                                            variant="destructive"
-                                            size="sm"
-                                            className="h-8 w-8 p-0"
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                handleDeleteCard(card.id);
-                                            }}
-                                        >
-                                            <Trash2 className="h-3 w-3" />
-                                        </Button>
-                                    </div>
-                                </div>
-                            </div>
-                        );
+                        return DeckCard(card, language, backendSide, handleDeleteCard);
                     })}
                 </div>
 
@@ -140,5 +104,58 @@ export default function DeckView({ cards, category }: { cards: Card[]; category:
                 <CardSlideshow cards={cards} isOpen={isSlideshowOpen} onClose={() => setIsSlideshowOpen(false)} />
             </div>
         </AppContainer>
+    );
+}
+function DeckCard(card: Card, language: string, backendSide: string, handleDeleteCard: (cardId: number) => void) {
+    const [flipped, setFlipped] = useState(false);
+
+    const handleClick = () => {
+        // Chỉ xử lý click nếu là mobile (hoặc luôn xử lý nếu bạn muốn click toggle được ở cả PC)
+        if (window.innerWidth <= 768) {
+            setFlipped((prev) => !prev);
+        }
+    };
+    return (
+        <div key={card.id} className="group relative h-32 [perspective:1000px] md:h-48">
+            <div className="group h-full w-full" onClick={handleClick}>
+                <div
+                    className={`relative h-full w-full transition-transform duration-700 [transform-style:preserve-3d] ${
+                        flipped ? '[transform:rotateY(180deg)]' : ''
+                    } group-hover:[transform:rotateY(180deg)]`}
+                >
+                    {/* Front Side */}
+                    <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-gradient-to-b from-purple-300/40 to-purple-100/10 text-center text-xl font-bold text-white shadow-md [backface-visibility:hidden]">
+                        {language === 'english' ? card.english : language === 'chinese' ? card.chinese : card.vietnamese}
+                    </div>
+
+                    {/* Back Side */}
+                    <div className="text-md absolute inset-0 flex [transform:rotateY(180deg)] items-center justify-center rounded-xl bg-purple-500 px-4 text-center font-bold text-white shadow-md [backface-visibility:hidden]">
+                        {backendSide}
+                    </div>
+                </div>
+            </div>
+
+            {/* Card Actions - Only visible on hover */}
+            <div className="absolute top-2 right-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                <div className="flex gap-1">
+                    <Link href={route('cards.edit', card.id)}>
+                        <Button variant="secondary" size="sm" className="h-8 w-8 p-0">
+                            <Edit className="h-3 w-3" />
+                        </Button>
+                    </Link>
+                    <Button
+                        variant="destructive"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            handleDeleteCard(card.id);
+                        }}
+                    >
+                        <Trash2 className="h-3 w-3" />
+                    </Button>
+                </div>
+            </div>
+        </div>
     );
 }
